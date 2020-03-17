@@ -80,13 +80,15 @@ module.exports = class CommonDAO{
       insertCart(cart){
         let data =[];
           var connection = this.connectToDB();
-        cart.cartid = Math.random();
+        cart.cartid = Math.floor(Math.random() * 10000000000000);
         data.push(cart.cartid);
         data.push(JSON.stringify(cart.orders));
+        data.push(cart.phone);
+        data.push(cart.total)
         let array = [];
         array.push(data);
         return new Promise(function(resolve,reject){
-            var query = connection.query('INSERT INTO orders VALUES ?', [array], (error, response) => {
+            var query = connection.query('INSERT INTO orders VALUES  ?', [array], (error, response) => {
                 if(error){
                     console.log(error);
                    return reject;
@@ -124,7 +126,7 @@ module.exports = class CommonDAO{
           console.log('inside select produts')
           console.log(catId);
           var connection = this.connectToDB();
-          var sql = "select * from product_catalog where catID =?";
+          var sql = "select * from product_catalog where product_category =?";
           console.log(sql);
           return new Promise( ( resolve, reject ) => {
               connection.query( sql,[catId],( err, rows ) => {
@@ -202,10 +204,10 @@ module.exports = class CommonDAO{
         var product = JSON.parse(products);
         console.log(product)
             var connection = this.connectToDB();
-            var records =[product.product_name,product.product_price,product.product_quantity,product.product_category,product.product_id];
+            var records =[product.product_name,product.product_price,product.product_quantity,product.product_category,product.selling_price,product.product_id];
             return new Promise(function(resolve, reject){
                 connection.query(
-                    "UPDATE product_catalog SET product_name =?,product_price =?,product_quantity =?,product_category=? WHERE product_id =?"
+                    "UPDATE product_catalog SET product_name =?,product_price =?,product_quantity =?,product_category=?,selling_price = ? WHERE product_id =?"
                     ,records,
                     function(err, rows){
                         console.log(err);
@@ -277,6 +279,27 @@ module.exports = class CommonDAO{
                 )}) 
         
 
+        }
+
+
+        getOrders(contact){
+            let phone =[contact]
+            var connection = this.connectToDB();
+            return new Promise(function(resolve, reject){
+                connection.query(
+                    "select * from orders where phone = ?"
+                    ,phone,
+                    function(err, rows){
+                        console.log(err);
+                        if(rows === undefined){
+                            reject(new Error("Error rows is undefined"));
+                        }else{
+                            console.log(rows);
+                            resolve(rows);
+                        }
+                    }
+                )}
+            )
         }
     putProducts(prod){
         var connection = this.connectToDB();

@@ -32,7 +32,7 @@ module.exports = class OtpService {
           }
           else{
             console.log(otp);
-              return resolve(otp);
+              return resolve({'authyId':authyId,'response':otp});
 
           }
         })
@@ -45,9 +45,10 @@ module.exports = class OtpService {
     return authy.request_sms(authyId)
    }
    authToken(Usertoken){
-     console.log(authyId)
+     console.log(Usertoken)
+     let token = JSON.parse(Usertoken);
      return new Promise(function(resolve,reject){
-       authy.verify(authyId,Usertoken,function(err,res) {
+       authy.verify(token.authyId,token.token,function(err,res) {
               if(err){
                 console.log(err)
                 return reject(err);

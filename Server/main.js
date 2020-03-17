@@ -137,13 +137,17 @@ app.post('/Upload', upload.array('myFile', 12), function (req, res, next) {
     }
 })
 
+
+
 app.post('/insertCart',function(req,res){
+        console.log(req);
         controller.putCart(req).then(function(rows){
           if(rows.affectedRows == 1){
              let email = new emailservice();
              let userparsed = JSON.parse(req.body.cart);
-             let products = userparsed.orders;
-             var table_body = '<table border="1" id="example"><thead><tr><th> Product Name</th><th> Product Price </th><th>Product Quantity</th><th>Numbers</th></tr></thead><tbody>';
+             let products = JSON.parse(userparsed.orders);
+             console.log("products"+products.length);
+             var table_body = '<table border="1" id="example"><thead><tr><th> Product Name</th><th> Product Price </th><th> Selling Price </th><th>Product Quantity</th><th>Numbers</th></tr></thead><tbody>';
                  for(var i =0; i<products.length;i++){
                      table_body+='<tr>';
                      table_body +='<td>';
@@ -151,6 +155,9 @@ app.post('/insertCart',function(req,res){
                      table_body +='</td>';
                      table_body +='<td>';
                      table_body +='&#x20b9;'+products[i].product_price;
+                     table_body +='</td>';
+                     table_body +='<td>';
+                     table_body +='&#x20b9;'+products[i].selling_price;
                      table_body +='</td>';
                      table_body +='<td>';
                      table_body +=products[i].product_quantity;
@@ -236,10 +243,9 @@ app.post('/sendOTP',function(req,res){
       var service = new injectable();
       console.log(req.body.user);
       service.registerUser(req.body.user).then(function(reg){
-
-        if(reg.success === true){
+        if(reg.response.success === true){
             console.log("res"+reg);
-          res.send(JSON.stringify(reg));
+          res.send({'authyId':reg.authyId});
         }
         else{
           res.send('something went wrong')
@@ -250,6 +256,9 @@ app.post('/sendOTP',function(req,res){
 app.get('/getCategories', function (req, res) {
         var common  = new commondao();
     common.getCategories().then(function (rows) {
+        rows.forEach((row)=>{
+            row.category_image = __dirname+'/uploads/'+ row.category_image
+        })
         res.send(rows);
     })
 })
@@ -379,7 +388,17 @@ function parseFile(req, res, next) {
     var filePath = req.files.file.path;
     console.log(filePath);
 
+
 }
+
+app.post('/getOrders',function(req,res){
+    controller.getOrders(req).then(result=>{
+        if(res !== undefined){
+            res.send(result);
+        }
+    })
+
+})
 
 //sendMail
 // app.post('/sendmail',(req,res) =>{

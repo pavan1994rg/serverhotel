@@ -159,6 +159,10 @@ putCart(req){
   var cartDetails = parsed;
       return common.insertCart(cartDetails);
 }
+getOrders(req){
+    var parsed = req.body.contact;
+    return common.getOrders(parsed);
+}
 
 
 }
