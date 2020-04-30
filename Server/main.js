@@ -50,10 +50,15 @@ var controller = new control();
 var jsonToParse = new jsonparse();
 var mainenum = new enums();
 var injectable = require('./Services/OtpService');
-var emailservice = require('./Services/EmailService');
+var orderservice = require('./Services/orderservice');
+var elasticservice = require('./Services/elasticservice');
+var paymentservice = require('./Services/PaymentService');
+var geoservice = require ('./Services/GeolocationService');
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
+
+
 // let storage = multer.diskStorage({
 //     destination: function (req, file, cb) {
 //       cb(null, './home/pavan/uploads')
@@ -103,6 +108,12 @@ app.get('/connect', (req, res) => {
     res.send(responseDisplay);
 })
 
+app.post('/putCategories',(req,res)=>{
+    controller.putCategories(req).then((result)=>{
+         res.send(result);
+    })
+})  
+
 app.post('/addproducts', (req, res) => {
     var jsonData = jsonToParse.parseJson(req);
     controller.addProducts(jsonData);
@@ -141,13 +152,14 @@ app.post('/Upload', upload.array('myFile', 12), function (req, res, next) {
 
 app.post('/insertCart',function(req,res){
         console.log(req);
+        JSON.parse(req.body.cart).token =  JSON.parse(req.body.cart).token+Math.floor(Math.random() * 10000000000000);
         controller.putCart(req).then(function(rows){
           if(rows.affectedRows == 1){
-             let email = new emailservice();
+             let order = new orderservice();
              let userparsed = JSON.parse(req.body.cart);
              let products = JSON.parse(userparsed.orders);
              console.log("products"+products.length);
-             var table_body = '<table border="1" id="example"><thead><tr><th> Product Name</th><th> Product Price </th><th> Selling Price </th><th>Product Quantity</th><th>Numbers</th></tr></thead><tbody>';
+             var table_body = '<table border="1" id="example"><thead><tr><th> Product Name</th><th> Product Price </th><th>Product Quantity</th><th>Numbers</th></tr></thead><tbody>';
                  for(var i =0; i<products.length;i++){
                      table_body+='<tr>';
                      table_body +='<td>';
@@ -155,9 +167,6 @@ app.post('/insertCart',function(req,res){
                      table_body +='</td>';
                      table_body +='<td>';
                      table_body +='&#x20b9;'+products[i].product_price;
-                     table_body +='</td>';
-                     table_body +='<td>';
-                     table_body +='&#x20b9;'+products[i].selling_price;
                      table_body +='</td>';
                      table_body +='<td>';
                      table_body +=products[i].product_quantity;
@@ -181,10 +190,22 @@ app.post('/insertCart',function(req,res){
                  table_body+='Phone :'+userparsed.phone;
                  table_body+='</tr>';
                  table_body+='</td>';
+                 table_body+='<table border="1" id="example"><thead><tr>Token</tr></thead><tbody>'
+                 table_body+='<tr>';
+                 table_body+='<td>';
+                 table_body+='Token :'+userparsed.token;
+                 table_body+='</tr>';
+                 table_body+='</td>';
                  table_body+='</tbody></table>';
-             email.sendEmail('pavan1994rg@gmail.com',table_body).then(function(info){
-                       res.send(info);
-             })
+                 controller.getemailfromrest(req).then(result=>{
+                     console.log(result);
+                     if(result){
+                        order.sendEmail(result[0].email_id,table_body,userparsed.phone).then(function(info){
+                            res.send(info);
+                            })
+                     }
+                 })
+            
           }
         })
 })
@@ -224,7 +245,7 @@ app.post('/requestToken',function(req,res){
 })
 
 app.post('/sendEmail',function(req,res){
-        let email = new emailservice();
+        let email = new orderservice();
         console.log(req.body.email);
         let parsedbody = JSON.parse(req.body.email);
         email.sendEmail(parsedbody.email,parsedbody.body).then(function(info){
@@ -400,11 +421,143 @@ app.post('/getOrders',function(req,res){
 
 })
 
+app.get('/getelastichealth',function(req,res){
+    let elastic = new elasticservice();
+    elastic.checkHealth().then(result=>{
+        res.send(result)
+    }).catch(err=>{
+        res.send(err)
+    })
+})
+
+app.post('/getsearch',function(req,res){
+    let elastic = new elasticservice();
+    console.log(req.body.searchText);
+    elastic.search('rhelastic',req.body.searchText).then(result=>{
+        console.log(result);
+        res.send(result)
+    }).catch(err=>{
+        console.log(err);
+        res.send(err)
+    })
+})
+
+app.post('/charge',function(req,res){
+    let payment = new paymentservice();
+    let parsed = JSON.parse(req.body.payment)
+    payment.chargePayment(parsed.charge).then(result=>{
+        res.send(result);
+    }).catch(err=>{
+        res.send(err)
+    })
+})
+
+app.post('/getpincode',function(req,res){
+       console.log(req.body.location);
+    let geo = new geoservice();
+   
+    let location = JSON.parse(req.body.location);
+    console.log( location.lat);
+    geo.getpincode(location.lat,location.lon).then(result=>{
+        res.send(result);
+    })
+  
+
+})  
+
+app.post('/getrestaurant',function(req,res){
+    console.log(req);
+    controller.getRestaurants(req).then(result=>{
+        if(result){
+            res.send(result);
+        }
+    })
+
+
+})
+
+app.post('/getfoodbyreshot',function(req,res){
+    console.log(req);
+    controller.getFoodbyHotRes(req).then(result=>{
+        if(result){
+            res.send(result);
+        }
+    })
+
+
+})
+
+app.post('/gethotelsnearby',function(req,res){
+    let geo = new geoservice();
+    let parsed = JSON.parse(req.body.location);
+    console.log(req.body.location);
+    geo.getpincode(parsed.lat,parsed.lon).then(result=>{
+            if(result){
+                console.log(result);
+                controller.getHotelsbyLocation(result[0].zipcode).then(hotel=>{
+                    res.send(hotel);
+                })
+                
+            }
+    })
+
+})
+app.post('/createToken',function(req,res){
+    let payment = new paymentservice();
+    let parsed = JSON.parse(req.body.card);
+    payment.createToken(parsed).then(result=>{
+        if(result)
+        res.send(result);
+    }).catch(err=>{
+        res.send(err);
+    })
+   
+
+})
+
+app.post('/chargepayment',function(req,res){
+    let payment = new paymentservice();
+    let parsed = JSON.parse(req.body.charge);
+    payment.chargePayment(parsed).then(result=>{
+        if(result)
+        res.send(result);
+    }).catch(err=>{
+        res.send(err);
+    })
+})
+
+app.post('/rating',function(req,res){   
+    console.log(JSON.stringify(req.body)); 
+    controller.insertrating(req).then(rows=>{
+      
+        controller.selectRatings().then(result=>{
+            console.log(JSON.stringify(result));
+            res.send(result);
+        }).catch(err=>{
+            res.send(err)
+        })
+    }).catch(err=>{
+        res.send(err);
+    })
+    
+})
+
+app.get('/selectrating',function(req,res){
+    controller.selectRatings().then(result=>{
+        console.log(JSON.stringify(result));
+    
+        res.send(result);
+    }).catch(err=>{
+        res.send(err)
+    })
+})
+
+
 //sendMail
 // app.post('/sendmail',(req,res) =>{
 //     console.log(req.body.user);
-//     let emailservice = new emailservice()
-//     emailservice.sendMail()
+//     let orderservice = new orderservice()
+//     orderservice.sendMail()
 // })
 //email,body
 //parsed.email.emailid, parsed.body

@@ -3,11 +3,11 @@ const emailConfig = require('../utility/emailConfig');
 var smtpTransport = require('nodemailer-smtp-transport');
 var handlebars = require('handlebars');
 
-module.exports = class EmailService {
+module.exports = class OrderService {
     constructor(){
 
     }
-    sendEmail(recieverEmailId,body){
+    sendEmail(recieverEmailId,body,phone){
       console.log(emailConfig.senderEmailId);
     return  new Promise(function(resolve,reject){
         var transporter = nodemailer.createTransport(smtpTransport({
@@ -21,7 +21,7 @@ module.exports = class EmailService {
         var mailOptions = {
             from: emailConfig.senderEmailId,
             to: recieverEmailId,
-            subject: 'Order Invoice',
+            subject: 'Order Invoice'+phone ,
             html: body
         };
 

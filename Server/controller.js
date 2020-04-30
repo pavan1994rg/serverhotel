@@ -164,5 +164,40 @@ getOrders(req){
     return common.getOrders(parsed);
 }
 
+putCategories(req){
+    console.log(req);
+    var parsed = JSON.parse(req.body.category);
+    return common.putCategories(parsed);
+}
 
+getRestaurants(req){
+    var cateId = req.body.cateId;
+    return common.getRestaurant(cateId);
+
+}
+
+
+getFoodbyHotRes(req){
+    var restId = req.body.restId
+    return common.getfoodbyHotRes(restId);
+}
+
+getHotelsbyLocation(code){
+    console.log(code);
+    return common.getHotelsbyPincode(code);
+}
+
+getemailfromrest(req){
+    var parsed = JSON.parse(req.body.cart);
+    return common.getrestaurantemail(parsed.restId);
+}
+
+insertrating(req){
+    var parsed = JSON.parse(req.body.rating);
+    return common.submitRating(parsed);
+}
+selectRatings(){
+    console.log('rating');
+    return common.selectRating();
+}
 }

@@ -1,6 +1,6 @@
 var emailConfig = {
-    senderEmailId: 'slvstore.111@gmail.com',
-    senderPassword:'slvparapoints12#',
+    senderEmailId: 'hotleapp2019@gmail.com',
+    senderPassword:'boson1994',
 };
 
 module.exports = emailConfig;

@@ -19,7 +19,7 @@ module.exports = class CommonDAO{
             port:"3306",
             user:"root",
             password:"1111",
-            database : "slvstore",
+            database : "hotelapp",
             port: 3306
         });
         con.connect((err)=>{
@@ -84,7 +84,9 @@ module.exports = class CommonDAO{
         data.push(cart.cartid);
         data.push(JSON.stringify(cart.orders));
         data.push(cart.phone);
-        data.push(cart.total)
+        data.push(cart.total);
+        data.push(cart.token);
+        data.push(cart.restId);
         let array = [];
         array.push(data);
         return new Promise(function(resolve,reject){
@@ -101,6 +103,27 @@ module.exports = class CommonDAO{
 
           })
 
+
+      }
+
+      getrestaurantemail(resId){
+        var connection = this.connectToDB();
+        return new Promise((resolve,reject)=>{
+        connection.query('',[],(err,response)=>{
+          
+                var query = connection.query('select * from email where rest_id = ?', [resId], (error, response) => {
+                    if(error){
+                        console.log(error);
+                       return reject;
+                               }
+                    else{
+                          return resolve(response);
+                    }
+                    
+
+            })
+        })
+    });
 
       }
 
@@ -156,7 +179,7 @@ module.exports = class CommonDAO{
 
         //         }
         // })
-        var sql = "select * from product_catalog";
+        var sql = "select * from menu_items";
         return new Promise( ( resolve, reject ) => {
             connection.query( sql,( err, rows ) => {
                 if ( err )
@@ -204,10 +227,10 @@ module.exports = class CommonDAO{
         var product = JSON.parse(products);
         console.log(product)
             var connection = this.connectToDB();
-            var records =[product.product_name,product.product_price,product.product_quantity,product.product_category,product.selling_price,product.product_id];
+            var records =[product.product_name,product.product_price,product.product_quantity,product.product_category,product.product_id];
             return new Promise(function(resolve, reject){
                 connection.query(
-                    "UPDATE product_catalog SET product_name =?,product_price =?,product_quantity =?,product_category=?,selling_price = ? WHERE product_id =?"
+                    "UPDATE menu_items SET product_name =?,product_price =?,product_quantity =?,product_category=? WHERE product_id =?"
                     ,records,
                     function(err, rows){
                         console.log(err);
@@ -244,7 +267,7 @@ module.exports = class CommonDAO{
             var connection = this.connectToDB();
             return new Promise(function(resolve, reject){
                 connection.query(
-                    "delete from product_catalog where product_id =?"
+                    "delete from menu_items where product_id =?"
                     ,product_id,
                     function(err, rows){
                         console.log(err);
@@ -317,7 +340,7 @@ module.exports = class CommonDAO{
                     values.push(temp);
                 })
                 console.log(values);
-                connection.query("insert into product_catalog values ?",[values], function (err, result, fields) {
+                connection.query("insert into menu_items  values ?",[values], function (err, result, fields) {
                     if (err)
                         console.log(err);
                     console.log(result);
@@ -331,7 +354,7 @@ module.exports = class CommonDAO{
      getCategories(){
          var connection = this.connectToDB();
          return new Promise(function (resolve, reject) {
-             connection.query("SELECT * FROM categories", function (err, result, fields) {
+             connection.query("SELECT * FROM menu_categories", function (err, result, fields) {
                      if (err) return reject;
                      console.log(result);
                      return resolve(result);
@@ -752,5 +775,121 @@ module.exports = class CommonDAO{
 
         }
 
+        putCategories(category){
+            var connection = this.connectToDB();
+            var data =[];
+            data.push(category.catId);
+            data.push(category.category_name);
+            data.push('');
+            var category_insert = [data];
+           return new Promise((resolve,reject)=>{
+                var query = connection.query('insert into menu_categories values ?', [category_insert], (error, response) => {
+                    if(error){
+                        console.log(error);
+                    }
+                    else{
+                        console.log(response);
+                       // var upadteQuery = connection.query('update employee set files = ? where empId =?',[files,empId],(err,response)=>{
+                       // })
+                       return resolve(response);
+                    }
+                    });
+            })
+            
+        }
+
+        getRestaurant(cateId){
+            var connection = this.connectToDB();
+           return new Promise((resolve,reject)=>{
+                var query = connection.query('select * from hotelrestaurant where category = ? and is_hotel=0', [cateId], (error, response) => {
+                    if(error){
+                        console.log(error);
+                    }
+                    else{
+                        console.log(response);
+                       // var upadteQuery = connection.query('update employee set files = ? where empId =?',[files,empId],(err,response)=>{
+                       // })
+                       return resolve(response);
+                    }
+                    });
+            })
+
+        }
+
+        getfoodbyHotRes(restId){
+            var connection = this.connectToDB();
+            return new Promise((resolve,reject)=>{
+                 var query = connection.query('select * from  menu_items where restaurant_id = ?', [restId], (error, response) => {
+                     if(error){
+                         console.log(error);
+                     }
+                     else{
+                         console.log(response);
+                        // var upadteQuery = connection.query('update employee set files = ? where empId =?',[files,empId],(err,response)=>{
+                        // })
+                        return resolve(response);
+                     }
+                     });
+             })
+        }
+
+        getHotelsbyPincode(code){
+            var connection = this.connectToDB();
+            return new Promise((resolve,reject)=>{
+                 var query = connection.query('SELECT * FROM hotelrestaurant WHERE JSON_EXTRACT(address, "$.pincode") ="'+code+'" and is_hotel=1;', (error, response) => {
+                     if(error){
+                         console.log(error);
+                     }
+                     else{
+                         console.log(response);
+                        // var upadteQuery = connection.query('update employee set files = ? where empId =?',[files,empId],(err,response)=>{
+                        // })
+                        return resolve(response);
+                     }
+                     });
+             })
+        }
+
+        submitRating(rating){
+        
+            var connection = this.connectToDB();
+            var data =[];
+            data.push(Math.floor(Math.random() * 10000))
+            data.push(rating.value);
+            data.push(rating.rest_id);
+            data.push(rating.order_id);
+            var rating_insert = [data];
+           return new Promise((resolve,reject)=>{
+                var query = connection.query('insert into rating values ?', [rating_insert], (error, response) => {
+                    if(error){
+                        console.log(error);
+                    }
+                    else{
+                        console.log(response);
+
+                       // var upadteQuery = connection.query('update employee set files = ? where empId =?',[files,empId],(err,response)=>{
+                       // })
+                       return resolve(response);
+                    }
+                    });
+            })
+        }
+
+        selectRating(){
+            var connection = this.connectToDB();
+            return new Promise((resolve,reject)=>{
+                var query = connection.query('select * from rating', (error, response) => {
+                    if(error){
+                        console.log(error);
+                    }
+                    else{
+                        console.log('res'+response);
+                       // var upadteQuery = connection.query('update employee set files = ? where empId =?',[files,empId],(err,response)=>{
+                       // })
+                       return resolve(response);
+                    }
+                    });
+            })
+        }
 
 }
